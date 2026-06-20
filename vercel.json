@@ -1,18 +1,6 @@
 {
-  "version": 2,
-  "name": "ronin-points-vault",
-  "builds": [
-    {
-      "src": "frontend/package.json",
-      "use": "@vercel/next"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "frontend/$1"
-    }
-  ],
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
   "env": {
     "NEXT_PUBLIC_CHAIN_ID": "2021",
     "NEXT_PUBLIC_RPC_URL": "https://saigon-testnet.roninchain.com/rpc"
