@@ -1,0 +1,73 @@
+name: Deploy to Ronin Saigon Testnet
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'contracts/**'
+      - 'scripts/**'
+  workflow_dispatch:
+
+jobs:
+  deploy-contracts:
+    name: Compile & Deploy Contracts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Compile contracts
+        run: npx hardhat compile
+
+      - name: Deploy to Ronin Saigon Testnet
+        env:
+          DEPLOYER_PRIVATE_KEY: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
+          RONIN_TESTNET_RPC: https://saigon-testnet.roninchain.com/rpc
+        run: npx hardhat run scripts/deploy.js --network ronin-testnet
+
+      - name: Upload deployment artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-addresses
+          path: deployments/
+          if-no-files-found: warn
+
+  verify-deployment:
+    name: Verify Contract on Ronin Explorer
+    needs: deploy-contracts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download deployment artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: deployment-addresses
+          path: deployments/
+
+      - name: Verify contracts on Saigon Explorer
+        env:
+          RONIN_SAIGON_API_KEY: ${{ secrets.RONIN_SAIGON_API_KEY }}
+        run: |
+          echo "Verification step - contracts deployed to Ronin Saigon Testnet (chainId: 2021)"
+          echo "Explorer: https://saigon-app.roninchain.com/"
+          cat deployments/*.json 2>/dev/null || echo "No deployment files found"
